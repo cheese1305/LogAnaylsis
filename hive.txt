@@ -1,0 +1,8 @@
+create external table logdata(logtime string, IP string, user string, request string, status int,bodysents int,requestlength bigint,requesttime float,httpreferer string, browser string) row format delimited fields terminated by '\t' location 'hdfs://192.168.12.60:9000/log/output/';
+create table  UV  row format delimited fields terminated by '\t' as select logtime,count(distinct IP)  from logdata group by logtime
+create table  PV  row format delimited fields terminated by '\t' as select logtime,count(*)  from logdata group by logtime
+sqoop export --connect jdbc:mysql://192.168.12.60:3306/sqooptest --username root --password 123456 --export-dir "/user/hive/warehouse/uv/" --table  uv --fields-terminated-by '\t'
+sqoop export --connect jdbc:mysql://192.168.12.60:3306/sqooptest --username root --password 123456 --export-dir "/user/hive/warehouse/pv/" --table  pv --fields-terminated-by '\t'
+create table  sumrequesttime  row format delimited fields terminated by '\t' as select logtime,IP, sum (requesttime) as sumrequesttime from logdata group by IP ,logtime;
+create table  avgrequesttime row format delimited fields terminated by '\t' as select logtime, avg(sumrequesttime) as avgrequesttime from sumrequesttime group by logtime;
+sqoop export --connect jdbc:mysql://192.168.12.60:3306/sqooptest --username root --password 123456 --export-dir "/user/hive/warehouse/avgrequesttime/" --table  avgtime --fields-terminated-by '\t'
